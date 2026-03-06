@@ -100,7 +100,29 @@ public enum NameCaseConvention {
      * @return Whether the input matches the formatting style of this convention.
      */
     public boolean matches(String str) {
-        return matches(this, str);
+        // Fast-fail common invalid inputs
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+
+        switch (this) {
+            case LOWER_HYPHEN:
+                return matchesSeparated(str, '-', /*lowerCase=*/true, /*allowDigits=*/true);
+            case LOWER_UNDERSCORE:
+                return matchesSeparated(str, '_', /*lowerCase=*/true, /*allowDigits=*/true);
+            case UPPER_UNDERSCORE:
+                return matchesSeparated(str, '_', /*lowerCase=*/false, /*allowDigits=*/true);
+            case LOWER_CAMEL:
+                return matchesCamel(str, /*firstUpper=*/false);
+            case UPPER_CAMEL:
+                return matchesCamel(str, /*firstUpper=*/true);
+            case EXACT:
+                // EXACT indicates no enforced transformation rule; consider any non-empty string a match.
+                return true;
+            default:
+                // Defensive: should never reach here for enum values, but preserve original behavior by returning false.
+                return false;
+        }
     }
 
     public static boolean matches(NameCaseConvention convention, String str) {
@@ -399,6 +421,78 @@ public enum NameCaseConvention {
         }
 
         return builder.toString();
+    }
+
+
+    private static boolean matchesSeparated(String s, char sep, boolean lowerCase, boolean allowDigits) {
+        int len = s.length();
+        if (len == 0) {
+            return false;
+        }
+        // first char cannot be separator
+        char c = s.charAt(0);
+        if (c == sep) {
+            return false;
+        }
+        for (int i = 0; i < len; i++) {
+            c = s.charAt(i);
+            if (c == sep) {
+                // separator must not be last and next must be valid start char
+                if (i == len - 1) {
+                    return false;
+                }
+                char nx = s.charAt(i + 1);
+                if (!isValidLetter(nx, lowerCase) && !(allowDigits && isDigit(nx))) {
+                    return false;
+                }
+            } else {
+                if (!isValidLetter(c, lowerCase) && !(allowDigits && isDigit(c))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean matchesCamel(String s, boolean firstUpper) {
+        int len = s.length();
+        if (len == 0) {
+            return false;
+        }
+        char first = s.charAt(0);
+        if (firstUpper) {
+            if (!isUpper(first)) {
+                return false;
+            }
+        } else {
+            if (!isLower(first)) {
+                return false;
+            }
+        }
+        for (int i = 1; i < len; i++) {
+            char c = s.charAt(i);
+            if (isUpper(c) || isLower(c) || isDigit(c)) {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isLower(char c) {
+        return c >= 'a' && c <= 'z';
+    }
+
+    private static boolean isUpper(char c) {
+        return c >= 'A' && c <= 'Z';
+    }
+
+    private static boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private static boolean isValidLetter(char c, boolean lowerCase) {
+        return lowerCase ? isLower(c) : isUpper(c);
     }
 
 }
