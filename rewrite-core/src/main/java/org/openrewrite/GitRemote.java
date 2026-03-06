@@ -49,12 +49,35 @@ public class GitRemote {
             return false;
         }
         GitRemote gitRemote = (GitRemote) o;
-        return service == gitRemote.service &&
-               StringUtils.equalsIgnoreCase(url, gitRemote.url) &&
-               StringUtils.equalsIgnoreCase(origin, gitRemote.origin) &&
-               StringUtils.equalsIgnoreCase(path, gitRemote.path) &&
-               StringUtils.equalsIgnoreCase(organization, gitRemote.organization) &&
-               StringUtils.equalsIgnoreCase(repositoryName, gitRemote.repositoryName);
+
+        // Fast-fail on the enum (cheap) and on repositoryName (non-null and likely discriminating)
+        if (service != gitRemote.service) {
+            return false;
+        }
+
+        String rn = repositoryName;
+        String orn = gitRemote.repositoryName;
+        if (rn != orn) {
+            if (rn == null || orn == null || !rn.equalsIgnoreCase(orn)) {
+                return false;
+            }
+        }
+
+        // Compare other fields with null-safe, case-insensitive checks.
+        if (!equalsIgnoreCaseNullSafe(url, gitRemote.url)) {
+            return false;
+        }
+        if (!equalsIgnoreCaseNullSafe(origin, gitRemote.origin)) {
+            return false;
+        }
+        if (!equalsIgnoreCaseNullSafe(path, gitRemote.path)) {
+            return false;
+        }
+        if (!equalsIgnoreCaseNullSafe(organization, gitRemote.organization)) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override
@@ -406,4 +429,15 @@ public class GitRemote {
         }
 
     }
+
+    private static boolean equalsIgnoreCaseNullSafe(String a, String b) {
+        if (a == b) {
+            return true;
+        }
+        if (a == null || b == null) {
+            return false;
+        }
+        return a.equalsIgnoreCase(b);
+    }
+
 }
