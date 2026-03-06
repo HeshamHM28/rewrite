@@ -31,6 +31,16 @@ import java.util.function.Consumer;
 
 public class LocalRemoteArtifactCache implements RemoteArtifactCache {
     private final Path cacheDir;
+    static final ThreadLocal<MessageDigest> DIGEST = ThreadLocal.withInitial(() -> {
+                try {
+                    return MessageDigest.getInstance("SHA-256");
+                } catch (NoSuchAlgorithmException e) {
+                    // propagate as checked exception wrapped to match callers' expectations;
+                    // the outer method handles this by rethrowing as RuntimeException.
+                    throw new RuntimeException(e);
+                }
+            });
+    static final char[] CHARS = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
 
     public LocalRemoteArtifactCache(Path cacheDir) {
         if (!cacheDir.toFile().exists() && !cacheDir.toFile().mkdirs()) {
@@ -48,9 +58,15 @@ public class LocalRemoteArtifactCache implements RemoteArtifactCache {
     @Override
     public @Nullable Path put(URI uri, InputStream artifactInputStream, Consumer<Throwable> onError) {
         synchronized (this) {
-            Path artifact = cacheDir.resolve(UUID.randomUUID() + ".tmp");
-            try (InputStream is = artifactInputStream) {
-                Files.copy(is, artifact, StandardCopyOption.REPLACE_EXISTING);
+            // create a temp file in the cache directory to avoid cross-filesystem moves and avoid
+            // constructing UUID strings manually
+            Path artifact = null;
+            try {
+                artifact = Files.createTempFile(cacheDir, "artifact-", ".tmp");
+                try (InputStream is = artifactInputStream) {
+                    Files.copy(is, artifact, StandardCopyOption.REPLACE_EXISTING);
+                }
+
                 Path cachedArtifact = cacheDir.resolve(hashUri(uri));
                 if (!Files.exists(cachedArtifact)) {
                     Files.move(artifact, cachedArtifact, StandardCopyOption.ATOMIC_MOVE,
@@ -61,7 +77,7 @@ public class LocalRemoteArtifactCache implements RemoteArtifactCache {
                 onError.accept(e);
                 return null;
             } finally {
-                if (Files.exists(artifact)) {
+                if (artifact != null && Files.exists(artifact)) {
                     try {
                         Files.delete(artifact);
                     } catch (IOException ignored) {
