@@ -98,17 +98,20 @@ public class ReflectionUtils {
                 Method[] declaredMethods = clazz.getDeclaredMethods();
                 List<Method> defaultMethods = findConcreteMethodsOnInterfaces(clazz);
                 if (defaultMethods != null) {
-                    result = new Method[declaredMethods.length + defaultMethods.size()];
-                    System.arraycopy(declaredMethods, 0, result, 0, declaredMethods.length);
-                    int index = declaredMethods.length;
-                    for (Method defaultMethod : defaultMethods) {
-                        result[index] = defaultMethod;
-                        index++;
+                    // Use Arrays.copyOf to allocate and copy declaredMethods, then append defaults.
+                    Method[] combined = Arrays.copyOf(declaredMethods, declaredMethods.length + defaultMethods.size());
+                    int idx = declaredMethods.length;
+                    for (int i = 0, n = defaultMethods.size(); i < n; i++) {
+                        combined[idx++] = defaultMethods.get(i);
                     }
+                    result = combined;
                 } else {
                     result = declaredMethods;
                 }
-                DECLARED_METHODS_CACHE.put(clazz, (result.length == 0 ? EMPTY_METHOD_ARRAY : result));
+                Method[] toCache = (result.length == 0 ? EMPTY_METHOD_ARRAY : result);
+                Method[] prev = DECLARED_METHODS_CACHE.putIfAbsent(clazz, toCache);
+                // If another thread beat us to it, use the existing cached value to ensure identity.
+                result = (prev == null ? toCache : prev);
             } catch (Throwable ex) {
                 throw new IllegalStateException("Failed to introspect Class [" + clazz.getName() +
                                                 "] from ClassLoader [" + clazz.getClassLoader() + "]", ex);
