@@ -24,6 +24,7 @@ import org.openrewrite.internal.StringUtils;
 public class LatestPatch implements VersionComparator {
     @Nullable
     String metadataPattern;
+    private static final LatestRelease CACHED_LATEST_RELEASE = new LatestRelease(null);
 
     @Override
     public boolean isValid(@Nullable String currentVersion, String version) {
@@ -42,13 +43,14 @@ public class LatestPatch implements VersionComparator {
 
     @Override
     public int compare(@Nullable String currentVersion, String v1, String v2) {
-        if(currentVersion == null) {
-            return new LatestRelease(null)
+        if (currentVersion == null) {
+            return CACHED_LATEST_RELEASE
                     .compare(null, v1, v2);
         }
 
         //noinspection ConstantConditions
-        return TildeRange.build(buildTildeRange(currentVersion), metadataPattern)
+        String mp = metadataPattern;
+        return TildeRange.build(buildTildeRange(currentVersion), mp)
                 .getValue()
                 .compare(currentVersion, v1, v2);
     }
