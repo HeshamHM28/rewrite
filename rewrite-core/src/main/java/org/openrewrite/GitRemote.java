@@ -59,12 +59,23 @@ public class GitRemote {
 
     @Override
     public int hashCode() {
-        return Objects.hash(service,
-                url == null ? null : url.toLowerCase(Locale.ENGLISH),
-                origin == null ? null : origin.toLowerCase(Locale.ENGLISH),
-                path == null ? null : path.toLowerCase(Locale.ENGLISH),
-                organization == null ? null : organization.toLowerCase(Locale.ENGLISH),
-                repositoryName == null ? null : repositoryName.toLowerCase(Locale.ENGLISH));
+        // Manual implementation equivalent to Arrays.hashCode(new Object[]{...})
+        // but avoids allocation of the Object[] and related boxing.
+        final Service svc = this.service;
+        final String u = this.url == null ? null : this.url.toLowerCase(Locale.ENGLISH);
+        final String o = this.origin == null ? null : this.origin.toLowerCase(Locale.ENGLISH);
+        final String p = this.path == null ? null : this.path.toLowerCase(Locale.ENGLISH);
+        final String org = this.organization == null ? null : this.organization.toLowerCase(Locale.ENGLISH);
+        final String repo = this.repositoryName == null ? null : this.repositoryName.toLowerCase(Locale.ENGLISH);
+
+        int result = 1;
+        result = 31 * result + (svc == null ? 0 : svc.hashCode());
+        result = 31 * result + (u == null ? 0 : u.hashCode());
+        result = 31 * result + (o == null ? 0 : o.hashCode());
+        result = 31 * result + (p == null ? 0 : p.hashCode());
+        result = 31 * result + (org == null ? 0 : org.hashCode());
+        result = 31 * result + (repo == null ? 0 : repo.hashCode());
+        return result;
     }
 
     public enum Service {
