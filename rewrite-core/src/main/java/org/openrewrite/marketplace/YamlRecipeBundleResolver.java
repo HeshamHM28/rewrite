@@ -30,10 +30,11 @@ public class YamlRecipeBundleResolver implements RecipeBundleResolver {
     private final Properties properties;
     private final RecipeMarketplace marketplace;
     private final Collection<RecipeBundleResolver> resolvers;
+    private static final String ECOSYSTEM = "yaml";
 
     @Override
     public String getEcosystem() {
-        return "yaml";
+        return ECOSYSTEM;
     }
 
     @Override
