@@ -50,11 +50,11 @@ public class GitRemote {
         }
         GitRemote gitRemote = (GitRemote) o;
         return service == gitRemote.service &&
-               StringUtils.equalsIgnoreCase(url, gitRemote.url) &&
-               StringUtils.equalsIgnoreCase(origin, gitRemote.origin) &&
-               StringUtils.equalsIgnoreCase(path, gitRemote.path) &&
-               StringUtils.equalsIgnoreCase(organization, gitRemote.organization) &&
-               StringUtils.equalsIgnoreCase(repositoryName, gitRemote.repositoryName);
+               eqIgnoreCase(url, gitRemote.url) &&
+               eqIgnoreCase(origin, gitRemote.origin) &&
+               eqIgnoreCase(path, gitRemote.path) &&
+               eqIgnoreCase(organization, gitRemote.organization) &&
+               eqIgnoreCase(repositoryName, gitRemote.repositoryName);
     }
 
     @Override
@@ -406,4 +406,20 @@ public class GitRemote {
         }
 
     }
+
+    private static boolean eqIgnoreCase(String a, String b) {
+        if (a == b) {
+            return true;
+        }
+        if (a == null || b == null) {
+            return false;
+        }
+        int len = a.length();
+        if (len != b.length()) {
+            return false;
+        }
+        // regionMatches with ignoreCase avoids creating temporary objects and is efficient.
+        return a.regionMatches(true, 0, b, 0, len);
+    }
+
 }
