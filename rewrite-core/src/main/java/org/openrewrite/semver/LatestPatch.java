@@ -31,13 +31,12 @@ public class LatestPatch implements VersionComparator {
                 LatestRelease.buildLatestRelease("latest.release", metadataPattern) :
                 TildeRange.build(buildTildeRange(currentVersion), metadataPattern, true);
 
-        if (validated.isValid()) {
-            VersionComparator comparator = validated.getValue();
-            if (comparator != null) {
-                return comparator.isValid(currentVersion, version);
-            }
+        if (validated.isInvalid()) {
+            return false;
         }
-        return false;
+        
+        VersionComparator comparator = validated.getValue();
+        return comparator != null && comparator.isValid(currentVersion, version);
     }
 
     @Override
