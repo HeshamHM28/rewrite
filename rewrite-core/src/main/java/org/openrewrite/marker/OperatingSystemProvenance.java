@@ -173,21 +173,27 @@ public abstract class OperatingSystemProvenance implements Marker {
     }
 
     public static OperatingSystemProvenance forName(String os) {
-        String osName = os.toLowerCase();
-        if (osName.contains("windows")) {
+        String osLower = os.toLowerCase();
+        
+        // Check most common OS types first
+        if (osLower.contains("windows")) {
             return getOsInstance("WINDOWS");
-        } else if (osName.contains("mac os x") || osName.contains("darwin") || osName.contains("osx")) {
-            return getOsInstance("MAC_OS");
-        } else if (osName.contains("sunos") || osName.contains("solaris")) {
-            return getOsInstance("SOLARIS");
-        } else if (osName.contains("linux")) {
-            return getOsInstance("LINUX");
-        } else if (osName.contains("freebsd")) {
-            return getOsInstance("FREE_BSD");
-        } else {
-            // Not strictly true
-            return getOsInstance("UNIX");
         }
+        if (osLower.contains("linux")) {
+            return getOsInstance("LINUX");
+        }
+        if (osLower.contains("mac os x") || osLower.contains("darwin") || osLower.contains("osx")) {
+            return getOsInstance("MAC_OS");
+        }
+        if (osLower.contains("freebsd")) {
+            return getOsInstance("FREE_BSD");
+        }
+        if (osLower.contains("sunos") || osLower.contains("solaris")) {
+            return getOsInstance("SOLARIS");
+        }
+        
+        // Not strictly true
+        return getOsInstance("UNIX");
     }
 
     @Override
