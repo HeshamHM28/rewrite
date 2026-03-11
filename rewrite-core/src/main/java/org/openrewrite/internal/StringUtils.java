@@ -245,43 +245,40 @@ public class StringUtils {
     }
 
     public static boolean containsOnlyWhitespaceAndComments(String text) {
-        int i = 0;
-        char[] chars = text.toCharArray();
-        boolean inSingleLineComment = false;
-        boolean inMultilineComment = false;
-        while (i < chars.length) {
-            char c = chars[i];
-            if (inSingleLineComment && c == '\n') {
-                inSingleLineComment = false;
-                continue;
-            }
-            if (i < chars.length - 1) {
-                String s = String.valueOf(c) + chars[i + 1];
-                switch (s) {
-                    case "//": {
+            int i = 0;
+            char[] chars = text.toCharArray();
+            boolean inSingleLineComment = false;
+            boolean inMultilineComment = false;
+            while (i < chars.length) {
+                char c = chars[i];
+                if (inSingleLineComment && c == '\n') {
+                    inSingleLineComment = false;
+                    continue;
+                }
+                if (i < chars.length - 1) {
+                    char next = chars[i + 1];
+                    // Replace the previous String allocation + switch with direct char comparisons
+                    if (c == '/' && next == '/') {
                         inSingleLineComment = true;
                         i += 2;
                         continue;
-                    }
-                    case "/*": {
+                    } else if (c == '/' && next == '*') {
                         inMultilineComment = true;
                         i += 2;
                         continue;
-                    }
-                    case "*/": {
+                    } else if (c == '*' && next == '/') {
                         inMultilineComment = false;
                         i += 2;
                         continue;
                     }
                 }
+                if (!inSingleLineComment && !inMultilineComment && !Character.isWhitespace(c)) {
+                    return false;
+                }
+                i++;
             }
-            if (!inSingleLineComment && !inMultilineComment && !Character.isWhitespace(c)) {
-                return false;
-            }
-            i++;
+            return true;
         }
-        return true;
-    }
 
     public static int indexOfNonWhitespace(String text) {
         for (int i = 0; i < text.length(); i++) {
