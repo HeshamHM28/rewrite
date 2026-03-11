@@ -50,8 +50,18 @@ public class PrintOutputCapture<P> implements Cloneable {
     }
 
     public PrintOutputCapture<P> append(@Nullable String text) {
-        if (text == null || text.isEmpty()) {
+        if (text == null || text.length() == 0) {
             return this;
+        }
+        int len = text.length();
+        if (len == 1) {
+            // Fast-path single character to avoid heavier String append handling
+            out.append(text.charAt(0));
+            return this;
+        }
+        // For large appends, ensure capacity to avoid repeated buffer growth
+        if (len > 64) {
+            out.ensureCapacity(out.length() + len);
         }
         out.append(text);
         return this;
