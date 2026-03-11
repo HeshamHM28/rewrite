@@ -100,7 +100,28 @@ public enum NameCaseConvention {
      * @return Whether the input matches the formatting style of this convention.
      */
     public boolean matches(String str) {
-        return matches(this, str);
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+
+        switch (this) {
+            case LOWER_HYPHEN:
+                return isDelimitedLower(str, '-');
+            case LOWER_UNDERSCORE:
+                return isDelimitedLower(str, '_');
+            case UPPER_UNDERSCORE:
+                return isDelimitedUpper(str, '_');
+            case LOWER_CAMEL:
+                return isCamel(str, /*firstUpper*/ false);
+            case UPPER_CAMEL:
+                return isCamel(str, /*firstUpper*/ true);
+            case EXACT:
+                // EXACT means no case convention enforcement; consider any non-null, non-empty string a match.
+                return true;
+            default:
+                // Fallback: shouldn't happen, but safe default to false.
+                return false;
+        }
     }
 
     public static boolean matches(NameCaseConvention convention, String str) {
@@ -399,6 +420,99 @@ public enum NameCaseConvention {
         }
 
         return builder.toString();
+    }
+
+
+    private static boolean isDelimitedLower(String s, char sep) {
+        int len = s.length();
+        char c = s.charAt(0);
+        if (!isLowerAlpha(c)) {
+            return false;
+        }
+        boolean prevSep = false;
+        for (int i = 1; i < len; i++) {
+            c = s.charAt(i);
+            if (c == sep) {
+                if (prevSep) {
+                    return false; // no consecutive separators
+                }
+                prevSep = true;
+            } else if (isLowerAlphaNumeric(c)) {
+                prevSep = false;
+            } else {
+                return false;
+            }
+        }
+        return !prevSep; // cannot end with separator
+    }
+
+    private static boolean isDelimitedUpper(String s, char sep) {
+        int len = s.length();
+        char c = s.charAt(0);
+        if (!isUpperAlpha(c)) {
+            return false;
+        }
+        boolean prevSep = false;
+        for (int i = 1; i < len; i++) {
+            c = s.charAt(i);
+            if (c == sep) {
+                if (prevSep) {
+                    return false;
+                }
+                prevSep = true;
+            } else if (isUpperAlphaNumeric(c)) {
+                prevSep = false;
+            } else {
+                return false;
+            }
+        }
+        return !prevSep;
+    }
+
+    private static boolean isCamel(String s, boolean firstUpper) {
+        int len = s.length();
+        char c0 = s.charAt(0);
+        if (firstUpper) {
+            if (!isUpperAlpha(c0)) {
+                return false;
+            }
+        } else {
+            if (!isLowerAlpha(c0)) {
+                return false;
+            }
+        }
+        for (int i = 1; i < len; i++) {
+            char c = s.charAt(i);
+            if (isAlphaNumeric(c)) {
+                // allowed
+                continue;
+            } else {
+                return false; // no separators allowed
+            }
+        }
+        return true;
+    }
+
+    private static boolean isLowerAlpha(char c) {
+        return c >= 'a' && c <= 'z';
+    }
+
+    private static boolean isUpperAlpha(char c) {
+        return c >= 'A' && c <= 'Z';
+    }
+
+    private static boolean isAlphaNumeric(char c) {
+        return (c >= 'a' && c <= 'z') ||
+               (c >= 'A' && c <= 'Z') ||
+               (c >= '0' && c <= '9');
+    }
+
+    private static boolean isLowerAlphaNumeric(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
+    }
+
+    private static boolean isUpperAlphaNumeric(char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
     }
 
 }
