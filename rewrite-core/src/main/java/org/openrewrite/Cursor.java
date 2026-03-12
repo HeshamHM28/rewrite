@@ -186,13 +186,18 @@ public class Cursor {
 
     @Override
     public String toString() {
-        return "Cursor{" +
-               stream(Spliterators.spliteratorUnknownSize(getPath(), 0), false)
-                       .map(t -> t instanceof Tree ?
-                               t.getClass().getSimpleName() :
-                               t.toString())
-                       .collect(joining("->")) +
-               "}";
+        Iterator<Object> it = getPath();
+        StringBuilder sb = new StringBuilder("Cursor{");
+        if (it.hasNext()) {
+            Object t = it.next();
+            appendRepresentation(sb, t);
+            while (it.hasNext()) {
+                sb.append("->");
+                appendRepresentation(sb, it.next());
+            }
+        }
+        sb.append('}');
+        return sb.toString();
     }
 
     public Cursor dropParentUntil(Predicate<Object> valuePredicate) {
@@ -366,4 +371,14 @@ public class Cursor {
     public Cursor fork() {
         return new Cursor(parent == null ? null : parent.fork(), value);
     }
+
+    private static void appendRepresentation(StringBuilder sb, Object t) {
+        // Preserve original behavior: for Tree instances use the simple class name, otherwise use toString()
+        if (t instanceof Tree) {
+            sb.append(t.getClass().getSimpleName());
+        } else {
+            sb.append(String.valueOf(t));
+        }
+    }
+
 }
