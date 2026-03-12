@@ -48,7 +48,8 @@ public class LatestPatch implements VersionComparator {
         }
 
         //noinspection ConstantConditions
-        return TildeRange.build(buildTildeRange(currentVersion), metadataPattern)
+        String tildeRange = buildTildeRange(currentVersion);
+        return TildeRange.build(tildeRange, metadataPattern)
                 .getValue()
                 .compare(currentVersion, v1, v2);
     }
