@@ -49,9 +49,10 @@ public class LoggingMeterRegistry extends MeterRegistry {
 
     public LoggingMeterRegistry(TimeUnit baseTimeUnit, Consumer<String> loggingSink, @Nullable Function<Meter, String> meterIdPrinter) {
         super(Clock.SYSTEM);
-        this.baseTimeUnit = baseTimeUnit;
+        // Fail fast on required arguments to avoid later unexpected null usage or extra checks.
+        this.baseTimeUnit = java.util.Objects.requireNonNull(baseTimeUnit, "baseTimeUnit");
+        this.loggingSink = java.util.Objects.requireNonNull(loggingSink, "loggingSink");
         this.startInterval = clock.monotonicTime();
-        this.loggingSink = loggingSink;
         this.meterIdPrinter = meterIdPrinter != null ? meterIdPrinter : defaultMeterIdPrinter();
         config().namingConvention(NamingConvention.dot);
     }
