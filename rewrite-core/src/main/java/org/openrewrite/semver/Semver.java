@@ -28,10 +28,7 @@ public class Semver {
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean isVersion(@Nullable String version) {
-        if (StringUtils.isBlank(version)) {
-            return false;
-        }
-        return LatestRelease.RELEASE_PATTERN.matcher(version).matches();
+        return !StringUtils.isBlank(version) && LatestRelease.RELEASE_PATTERN.matcher(version).matches();
     }
 
     /**
