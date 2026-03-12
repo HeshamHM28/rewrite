@@ -103,25 +103,32 @@ public class RecipeClassLoader extends URLClassLoader {
                 return foundClass;
             }
 
-            // Determine delegation strategy
-            try {
-                if (shouldDelegateToParent(name)) {
-                    try {
-                        foundClass = parent.loadClass(name);
-                    } catch (ClassNotFoundException e) {
-                        // Fall back to child if parent doesn't have the class.
-                        // This handles marker/tree/style types from language-specific modules
-                        // (e.g., org.openrewrite.gradle.marker.GradlePluginDescriptor)
-                        // that aren't on the parent classloader.
+            // Determine delegation strategy and perform efficient lookups.
+            // Avoid relying on exceptions for normal control flow by checking for the class resource
+            // in the child classloader before invoking findClass.
+            final String resourceName = name.replace('.', '/') + ".class";
+            boolean delegateToParent = shouldDelegateToParent(name);
+
+            if (delegateToParent) {
+                try {
+                    // Prefer parent
+                    foundClass = parent.loadClass(name);
+                } catch (ClassNotFoundException e) {
+                    // Parent didn't have it — check child resources before attempting findClass to avoid expensive exceptions
+                    if (findResource(resourceName) != null) {
                         foundClass = findClass(name);
+                    } else {
+                        // Re-throw the original parent exception to preserve semantics
+                        throw e;
                     }
-                } else {
-                    // Try child-first for non-delegated classes
-                    foundClass = findClass(name);
                 }
-            } catch (ClassNotFoundException e) {
-                // Fall back to parent if not found in child
-                foundClass = parent.loadClass(name);
+            } else {
+                // Child-first
+                if (findResource(resourceName) != null) {
+                    foundClass = findClass(name);
+                } else {
+                    foundClass = parent.loadClass(name); // may throw, which is intended
+                }
             }
 
             if (resolve) {
