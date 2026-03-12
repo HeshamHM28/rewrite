@@ -51,21 +51,16 @@ public class ExceptionUtils {
     public static boolean containsCircularReferences(Throwable exception) {
         Set<Throwable> causes = newSetFromMap(new IdentityHashMap<>());
         causes.add(exception);
-        boolean containsACircularReference = false;
-        while (exception != null && exception.getCause() != null) {
+        while (exception != null) {
             Throwable exceptionToFind = exception.getCause();
-            if (exceptionToFind != null) {
-
-                if (!causes.add(exceptionToFind)) {
-                    containsACircularReference = true;
-                    break;
-                } else {
-                    exception = exceptionToFind;
-                }
-            } else {
-                exception = null;
+            if (exceptionToFind == null) {
+                break;
             }
+            if (!causes.add(exceptionToFind)) {
+                return true;
+            }
+            exception = exceptionToFind;
         }
-        return containsACircularReference;
+        return false;
     }
 }
