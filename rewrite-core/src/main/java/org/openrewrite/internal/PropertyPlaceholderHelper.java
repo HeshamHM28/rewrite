@@ -48,17 +48,23 @@ public class PropertyPlaceholderHelper {
 
     @Nullable
     private final String valueSeparator;
+    private final int prefixLength;
+    private final int suffixLength;
+    private final int simplePrefixLength;
 
     public PropertyPlaceholderHelper(String placeholderPrefix, String placeholderSuffix,
                                      @Nullable String valueSeparator) {
         this.placeholderPrefix = placeholderPrefix;
         this.placeholderSuffix = placeholderSuffix;
+        this.prefixLength = placeholderPrefix.length();
+        this.suffixLength = placeholderSuffix.length();
         String simplePrefixForSuffix = wellKnownSimplePrefixes.get(this.placeholderSuffix);
         if (simplePrefixForSuffix != null && this.placeholderPrefix.endsWith(simplePrefixForSuffix)) {
             this.simplePrefix = simplePrefixForSuffix;
         } else {
             this.simplePrefix = this.placeholderPrefix;
         }
+        this.simplePrefixLength = this.simplePrefix.length();
         this.valueSeparator = valueSeparator;
     }
 
@@ -113,7 +119,7 @@ public class PropertyPlaceholderHelper {
 
     protected String parseStringValue(String value, Function<String, @Nullable String> placeholderResolver,
                                       @Nullable Set<String> visitedPlaceholders) {
-        int startIndex = value.indexOf(placeholderPrefix);
+        int startIndex = indexOfPrefix(value, 0);
         if (startIndex == -1) {
             return value;
         }
@@ -122,7 +128,7 @@ public class PropertyPlaceholderHelper {
         while (startIndex != -1) {
             int endIndex = findPlaceholderEndIndex(result, startIndex);
             if (endIndex != -1) {
-                String placeholder = result.substring(startIndex + placeholderPrefix.length(), endIndex);
+                String placeholder = result.substring(startIndex + prefixLength, endIndex);
                 String originalPlaceholder = placeholder;
                 if (visitedPlaceholders == null) {
                     visitedPlaceholders = new HashSet<>(4);
@@ -148,7 +154,7 @@ public class PropertyPlaceholderHelper {
                     // Recursive invocation, parsing placeholders contained in the
                     // previously resolved placeholder value.
                     propVal = parseStringValue(propVal, placeholderResolver, visitedPlaceholders);
-                    result.replace(startIndex, endIndex + placeholderSuffix.length(), propVal);
+                    result.replace(startIndex, endIndex + suffixLength, propVal);
 
                     if (propVal.length() < endIndex - startIndex + 1) {
                         endIndex = startIndex + propVal.length();
@@ -156,7 +162,7 @@ public class PropertyPlaceholderHelper {
                 }
 
                 // Proceed with unprocessed value.
-                startIndex = result.indexOf(placeholderPrefix, endIndex);
+                startIndex = indexOfPrefix(result, endIndex);
                 visitedPlaceholders.remove(originalPlaceholder);
             } else {
                 startIndex = -1;
@@ -197,4 +203,29 @@ public class PropertyPlaceholderHelper {
         }
         return true;
     }
+
+    private int indexOfPrefix(CharSequence buf, int fromIndex) {
+        int bufLen = buf.length();
+        int searchLen = bufLen - prefixLength;
+
+        for (int i = fromIndex; i <= searchLen; i++) {
+            if (matchesAt(buf, i, placeholderPrefix, prefixLength)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private boolean matchesAt(CharSequence buf, int index, String match, int matchLen) {
+        if (index + matchLen > buf.length()) {
+            return false;
+        }
+        for (int i = 0; i < matchLen; i++) {
+            if (buf.charAt(index + i) != match.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
