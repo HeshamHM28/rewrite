@@ -197,8 +197,10 @@ public class Cursor {
 
     public Cursor dropParentUntil(Predicate<Object> valuePredicate) {
         Cursor cursor = parent;
-        while (cursor != null && !valuePredicate.test(cursor.value)) {
-            cursor = cursor.parent;
+        for (; cursor != null; cursor = cursor.parent) {
+            if (valuePredicate.test(cursor.value)) {
+                return cursor;
+            }
         }
         if (cursor == null) {
             throw new IllegalStateException("Expected to find a matching parent for " + this);
