@@ -105,7 +105,11 @@ public class NamedStyles implements Marker {
         }
         Set<Class<? extends Style>> styleClasses = new HashSet<>();
         for (NamedStyles namedStyles : styles) {
-            for (Style style : namedStyles.getStyles()) {
+            Collection<Style> s = namedStyles.getStyles();
+            if (s == null) {
+                continue;
+            }
+            for (Style style : s) {
                 styleClasses.add(style.getClass());
             }
         }
@@ -116,10 +120,30 @@ public class NamedStyles implements Marker {
             mergedStyles.add(NamedStyles.merge(styleClass, styles));
         }
 
+        // Build the joined names string without streams to reduce allocations
+        StringBuilder namesBuilder = new StringBuilder();
+        namesBuilder.append("Merged Styles from ");
+        for (int i = 0; i < styles.size(); i++) {
+            if (i > 0) {
+                namesBuilder.append(", ");
+            }
+            namesBuilder.append(styles.get(i).getName());
+        }
+        String mergedDescription = namesBuilder.toString();
+
+        // Aggregate tags into a single Set (behaves similarly to collect(toSet()))
+        Set<String> mergedTags = new HashSet<>();
+        for (NamedStyles ns : styles) {
+            Set<String> t = ns.getTags();
+            if (t != null && !t.isEmpty()) {
+                mergedTags.addAll(t);
+            }
+        }
+
         return new NamedStyles(Tree.randomId(), "MergedStyles",
                 "Merged styles",
-                "Merged Styles from " + styles.stream().map(NamedStyles::getName).collect(joining(", ")),
-                styles.stream().map(NamedStyles::getTags).flatMap(Set::stream).collect(toSet()),
+                mergedDescription,
+                mergedTags,
                 mergedStyles);
     }
 
