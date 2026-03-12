@@ -51,10 +51,10 @@ public class TreeVisitorAdapterClassLoader extends ClassLoader implements ClassO
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         Class<?> clazz = adaptedClasses.get(name);
-        if (clazz == null) {
-            throw new ClassNotFoundException();
+        if (clazz != null) {
+            return clazz;
         }
-        return clazz;
+        throw new ClassNotFoundException(name);
     }
 
     @Override
