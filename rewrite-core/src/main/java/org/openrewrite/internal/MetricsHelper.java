@@ -22,6 +22,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class MetricsHelper {
+    private static final String DEFAULT_SUCCESS_TAG = "none";
+
     public static void record(String timerName, Consumer<Timer.Builder> f) {
         Timer.Builder timer = Timer.builder(timerName);
         Timer.Sample sample = Timer.start();
@@ -48,7 +50,7 @@ public class MetricsHelper {
     }
 
     public static Timer.Builder successTags(Timer.Builder timer) {
-        return successTags(timer, "none");
+        return successTags(timer, DEFAULT_SUCCESS_TAG);
     }
 
     public static Timer.Builder successTags(Timer.Builder timer, String reason) {
