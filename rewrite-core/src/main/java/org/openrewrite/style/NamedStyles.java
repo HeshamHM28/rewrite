@@ -72,18 +72,20 @@ public class NamedStyles implements Marker {
     public static <S extends Style> @Nullable S merge(Class<S> styleClass,
                                             Iterable<? extends NamedStyles> namedStyles) {
         S merged = null;
+        final Class<S> sc = styleClass;
         for (NamedStyles namedStyle : namedStyles) {
             Collection<Style> styles = namedStyle.styles;
             //noinspection ConstantValue
-            if (styles != null) {
-                for (Style style : styles) {
-                    if (styleClass.isInstance(style)) {
-                        style = style.applyDefaults();
-                        if (merged == null) {
-                            merged = (S) style;
-                        } else {
-                            merged = (S) merged.merge(style);
-                        }
+            if (styles == null || styles.isEmpty()) {
+                continue;
+            }
+            for (Style style : styles) {
+                if (sc.isInstance(style)) {
+                    Style applied = style.applyDefaults();
+                    if (merged == null) {
+                        merged = (S) applied;
+                    } else {
+                        merged = (S) merged.merge(applied);
                     }
                 }
             }
