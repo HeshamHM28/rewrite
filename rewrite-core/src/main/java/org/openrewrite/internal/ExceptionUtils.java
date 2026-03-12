@@ -30,20 +30,27 @@ public class ExceptionUtils {
      * @return The sanitized stack trace
      */
     public static String sanitizeStackTrace(Throwable t, Class<?> until) {
-        StringJoiner sanitized = new StringJoiner("\n");
+        // Use StringBuilder to reduce temporary object allocation compared to StringJoiner + intermediate Strings
+        StringBuilder sanitized = new StringBuilder(256);
         Throwable cause = t instanceof RecipeRunException ? t.getCause() : t;
-        sanitized.add(cause.getClass().getName() + ": " + cause.getLocalizedMessage());
+        // Preserve original behavior (may throw NPE if cause is null)
+        sanitized.append(cause.getClass().getName()).append(": ").append(cause.getLocalizedMessage());
+
+        StackTraceElement[] stack = cause.getStackTrace();
+        String untilName = until.getName();
 
         int i = 0;
-        for (StackTraceElement stackTraceElement : cause.getStackTrace()) {
-            if (stackTraceElement.getClassName().equals(until.getName())) {
+        for (int idx = 0, len = stack.length; idx < len; idx++) {
+            StackTraceElement ste = stack[idx];
+            if (ste.getClassName().equals(untilName)) {
                 break;
             }
-            if (i++ >= 16) {
-                sanitized.add("  ...");
+            if (i >= 16) {
+                sanitized.append('\n').append("  ...");
                 break;
             }
-            sanitized.add("  " + stackTraceElement);
+            sanitized.append('\n').append("  ").append(ste);
+            i++;
         }
         return sanitized.toString();
     }
