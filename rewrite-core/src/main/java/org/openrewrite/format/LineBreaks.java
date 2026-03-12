@@ -20,13 +20,45 @@ public class LineBreaks {
         if (!text.contains("\n")) {
             return text;
         }
-        StringBuilder normalized = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (useCrlf && c == '\n' && (i == 0 || text.charAt(i - 1) != '\r')) {
-                normalized.append('\r').append('\n');
-            } else if (useCrlf || c != '\r') {
-                normalized.append(c);
+        int len = text.length();
+
+        // Pre-scan to compute needed capacity to avoid resizing the StringBuilder.
+        int extra = 0;
+        if (useCrlf) {
+            // Count how many '\n' are not already preceded by '\r' (we'll need to insert '\r' before them).
+            for (int i = 0; i < len; i++) {
+                char c = text.charAt(i);
+                if (c == '\n' && (i == 0 || text.charAt(i - 1) != '\r')) {
+                    extra++;
+                }
+            }
+        } else {
+            // Count how many '\r' will be removed.
+            for (int i = 0; i < len; i++) {
+                if (text.charAt(i) == '\r') {
+                    extra++;
+                }
+            }
+            // For the non-CRLF case, 'extra' is the number of chars to remove.
+            extra = -extra;
+        }
+
+        StringBuilder normalized = new StringBuilder(len + Math.max(0, extra));
+        if (useCrlf) {
+            for (int i = 0; i < len; i++) {
+                char c = text.charAt(i);
+                if (c == '\n' && (i == 0 || text.charAt(i - 1) != '\r')) {
+                    normalized.append('\r').append('\n');
+                } else {
+                    normalized.append(c);
+                }
+            }
+        } else {
+            for (int i = 0; i < len; i++) {
+                char c = text.charAt(i);
+                if (c != '\r') {
+                    normalized.append(c);
+                }
             }
         }
         return normalized.toString();
