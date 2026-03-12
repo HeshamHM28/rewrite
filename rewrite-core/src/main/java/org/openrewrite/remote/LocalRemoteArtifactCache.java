@@ -31,6 +31,14 @@ import java.util.function.Consumer;
 
 public class LocalRemoteArtifactCache implements RemoteArtifactCache {
     private final Path cacheDir;
+    private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
+    private static final ThreadLocal<MessageDigest> DIGEST_CACHE = ThreadLocal.withInitial(() -> {
+            try {
+                return MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
     public LocalRemoteArtifactCache(Path cacheDir) {
         if (!cacheDir.toFile().exists() && !cacheDir.toFile().mkdirs()) {
