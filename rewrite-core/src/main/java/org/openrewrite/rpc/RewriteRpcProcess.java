@@ -64,6 +64,8 @@ public class RewriteRpcProcess extends Thread {
     private final Map<String, String> environment = new LinkedHashMap<>();
 
     private final StringBuffer accumulatedStderr = new StringBuffer();
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
+    private static final ThreadLocal<byte[]> THREAD_BUFFER = ThreadLocal.withInitial(() -> new byte[DEFAULT_BUFFER_SIZE]);
 
     public RewriteRpcProcess(String... command) {
         this.command = command;
@@ -95,6 +97,7 @@ public class RewriteRpcProcess extends Thread {
     }
 
     public @Nullable RuntimeException getLivenessCheck() {
+        Process process = this.process;
         if (process == null) {
             return null;
         }
@@ -104,10 +107,15 @@ public class RewriteRpcProcess extends Thread {
             InputStream errorStream = process.getErrorStream();
             int available = errorStream.available();
             if (available > 0) {
-                byte[] buffer = new byte[available];
-                int read = errorStream.read(buffer);
+                byte[] buf = THREAD_BUFFER.get();
+                if (buf.length < available) {
+                    buf = new byte[available];
+                    THREAD_BUFFER.set(buf);
+                }
+                int toRead = Math.min(buf.length, available);
+                int read = errorStream.read(buf, 0, toRead);
                 if (read > 0) {
-                    accumulatedStderr.append(new String(buffer, 0, read));
+                    accumulatedStderr.append(new String(buf, 0, read));
                 }
             }
         } catch (IOException | UnsupportedOperationException e) {
@@ -134,15 +142,18 @@ public class RewriteRpcProcess extends Thread {
                 // Ignore errors reading final stdout
             }
 
-            String message = "RPC process shut down early with exit code " + exitCode;
+            StringBuilder messageBuilder = new StringBuilder();
+            messageBuilder.append("RPC process shut down early with exit code ").append(exitCode);
             String errorOutput = accumulatedStderr.toString();
             if (!stdOutput.isEmpty()) {
-                message += "\nStandard output:\n  " + stdOutput.replace("\n", "\n  ");
+                messageBuilder.append("\nStandard output:\n  ")
+                        .append(stdOutput.replace("\n", "\n  "));
             }
             if (!errorOutput.isEmpty()) {
-                message += "\nError output:\n  " + errorOutput.replace("\n", "\n  ");
+                messageBuilder.append("\nError output:\n  ")
+                        .append(errorOutput.replace("\n", "\n  "));
             }
-            return new IllegalStateException(message.trim());
+            return new IllegalStateException(messageBuilder.toString().trim());
         }
         return null;
     }
