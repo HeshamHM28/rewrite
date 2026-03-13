@@ -618,17 +618,19 @@ public class StringUtils {
         }
 
         int length = name.length();
-        StringBuilder sb = new StringBuilder(length);
+        char[] chars = name.toCharArray();
+        // Pre-size StringBuilder to accommodate typical expansion patterns
+        StringBuilder sb = new StringBuilder(length + (length >> 1));
         char prev = 0;
+        
         for (int i = 0; i < length; i++) {
-            boolean isLast = i == length - 1;
-            char c = name.charAt(i);
+            char c = chars[i];
             switch (c) {
                 case '.':
-                    if (prev != '.' && (isLast || name.charAt(i + 1) != '.')) {
-                        sb.append("[.$]");
-                    } else if (prev == '.') {
+                    if (prev == '.') {
                         sb.append("\\.(.+\\.)?");
+                    } else if (i == length - 1 || chars[i + 1] != '.') {
+                        sb.append("[.$]");
                     }
                     break;
                 case '*':
@@ -637,8 +639,8 @@ public class StringUtils {
                 case '$':
                 case '[':
                 case ']':
-                    sb.append('\\');
-                    // fall-through
+                    sb.append('\\').append(c);
+                    break;
                 default:
                     sb.append(c);
             }
