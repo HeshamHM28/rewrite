@@ -241,7 +241,9 @@ public class StringUtils {
         if (value.isEmpty()) {
             return value;
         }
-        return Character.toLowerCase(value.charAt(0)) + value.substring(1);
+        char[] chars = value.toCharArray();
+        chars[0] = Character.toLowerCase(chars[0]);
+        return new String(chars);
     }
 
     public static boolean containsOnlyWhitespaceAndComments(String text) {
