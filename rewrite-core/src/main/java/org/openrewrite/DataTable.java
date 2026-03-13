@@ -38,6 +38,7 @@ public class DataTable<Row> {
 
     @Language("markdown")
     private final @NlsRewrite.Description String description;
+    private transient volatile Class<Row> type;
 
     /**
      * Construct a new data table.
@@ -59,9 +60,19 @@ public class DataTable<Row> {
     }
 
     public Class<Row> getType() {
-        //noinspection unchecked
-        return (Class<Row>) ((ParameterizedType) getClass().getGenericSuperclass())
-                .getActualTypeArguments()[0];
+        Class<Row> t = type;
+        if (t == null) {
+            synchronized (this) {
+                t = type;
+                if (t == null) {
+                    //noinspection unchecked
+                    t = (Class<Row>) ((ParameterizedType) getClass().getGenericSuperclass())
+                            .getActualTypeArguments()[0];
+                    type = t;
+                }
+            }
+        }
+        return t;
     }
 
     public String getName() {

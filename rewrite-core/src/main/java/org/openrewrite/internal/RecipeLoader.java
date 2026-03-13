@@ -45,10 +45,11 @@ public class RecipeLoader {
     }
 
     public Recipe load(Class<?> recipeClass, @Nullable Map<String, Object> recipeArgs) {
+        Map<String, Object> args = recipeArgs == null ? emptyMap() : recipeArgs;
         try {
-            return RecipeIntrospectionUtils.constructRecipe(recipeClass, recipeArgs == null ? emptyMap() : recipeArgs);
+            return RecipeIntrospectionUtils.constructRecipe(recipeClass, args);
         } catch (RecipeIntrospectionException | IllegalArgumentException e) {
-            return instantiateRecipeUsingJackson(recipeClass.getName(), recipeArgs == null ? emptyMap() : recipeArgs);
+            return instantiateRecipeUsingJackson(recipeClass.getName(), args);
         }
     }
 
