@@ -284,9 +284,12 @@ public class StringUtils {
     }
 
     public static int indexOfNonWhitespace(String text) {
-        for (int i = 0; i < text.length(); i++) {
+        int len = text.length();
+        for (int i = 0; i < len; i++) {
             char c = text.charAt(i);
-            if (!(c == ' ' || c == '\t' || c == '\n' || c == '\r')) {
+            // Fast-path: most characters are > ' ' (space). For those, we can immediately
+            // consider them non-whitespace as per the original definition.
+            if (c > ' ' || (c != '\t' && c != '\n' && c != '\r')) {
                 return i;
             }
         }
