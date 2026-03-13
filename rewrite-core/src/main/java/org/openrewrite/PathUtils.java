@@ -58,7 +58,21 @@ public class PathUtils {
     }
 
     public static String separatorsToUnix(String path) {
-        return path.replace(WINDOWS_SEPARATOR, UNIX_SEPARATOR);
+        int len = path.length();
+        // Fast-path: if there are no Windows separators, return the original string without allocation.
+        for (int i = 0; i < len; i++) {
+            if (path.charAt(i) == WINDOWS_SEPARATOR) {
+                char[] chars = path.toCharArray();
+                // Replace remaining separators in the char array in-place.
+                for (int j = i; j < len; j++) {
+                    if (chars[j] == WINDOWS_SEPARATOR) {
+                        chars[j] = UNIX_SEPARATOR;
+                    }
+                }
+                return new String(chars);
+            }
+        }
+        return path;
     }
 
     public static String separatorsToWindows(String path) {
