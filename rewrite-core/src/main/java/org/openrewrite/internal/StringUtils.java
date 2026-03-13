@@ -300,7 +300,14 @@ public class StringUtils {
      * or <code>-1</code> if no character in the string matches the predicate.
      */
     public static int indexOf(String text, Predicate<Character> test) {
-        return indexOf(text, 0, test);
+        int len = text.length();
+        for (int i = 0; i < len; i++) {
+            char c = text.charAt(i);
+            if (test.test(Character.valueOf(c))) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
