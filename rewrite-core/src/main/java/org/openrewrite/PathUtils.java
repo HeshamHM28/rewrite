@@ -254,18 +254,35 @@ public class PathUtils {
             return emptyList();
         }
 
-        List<String> eitherOrPatterns = new ArrayList<>(3);
-
         Matcher matcher = ALTERNATIVES_PATTERN.matcher(globPattern);
-
-        // Find all possible patterns and generate patterns
-        while (matcher.find()) {
+        
+        // Find first match to check if there are any patterns at all
+        if (!matcher.find()) {
+            return emptyList();
+        }
+        
+        // Pre-size list with reasonable estimate
+        List<String> eitherOrPatterns = new ArrayList<>(8);
+        
+        do {
+            String matchedGroup = matcher.group();
             String eitherOrContent = matcher.group(1);
             String[] options = eitherOrContent.split(",");
+            
+            int start = matcher.start();
+            int end = matcher.end();
+            int prefixLen = start;
+            int suffixLen = globPattern.length() - end;
+            
             for (String option : options) {
-                eitherOrPatterns.add(globPattern.replace(matcher.group(), option));
+                // Build pattern using StringBuilder to avoid repeated string allocations
+                StringBuilder pattern = new StringBuilder(prefixLen + option.length() + suffixLen);
+                pattern.append(globPattern, 0, start);
+                pattern.append(option);
+                pattern.append(globPattern, end, globPattern.length());
+                eitherOrPatterns.add(pattern.toString());
             }
-        }
+        } while (matcher.find());
 
         return eitherOrPatterns;
     }
