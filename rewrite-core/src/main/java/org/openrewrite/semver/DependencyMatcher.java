@@ -68,8 +68,8 @@ public class DependencyMatcher {
     }
 
     public boolean matches(@Nullable String groupId, @Nullable String artifactId, String version) {
-        return StringUtils.matchesGlob(groupId, groupPattern) &&
-                StringUtils.matchesGlob(artifactId, artifactPattern) &&
+        return matchesPatternFast(groupId, groupPattern) &&
+                matchesPatternFast(artifactId, artifactPattern) &&
                 (versionComparator == null || versionComparator.isValid(null, version));
     }
 
@@ -87,4 +87,38 @@ public class DependencyMatcher {
         }
         return versionComparator.upgrade(currentVersion, availableVersions);
     }
+
+    private static boolean matchesPatternFast(@Nullable String str, @Nullable String pattern) {
+        // pattern == null or "*" matches everything
+        if (pattern == null || "*".equals(pattern)) {
+            return true;
+        }
+
+        // Normalize null input to empty string as the original implementation does.
+        String s = (str == null) ? "" : str;
+
+        // If there are no wildcard characters, use a fast case-insensitive equality check.
+        if (pattern.indexOf('*') == -1 && pattern.indexOf('?') == -1) {
+            return s.equalsIgnoreCase(pattern);
+        }
+
+        // If the input string is empty but the pattern is non-empty, only match if the pattern
+        // consists entirely of '*' characters (same semantics as the original matchesGlob).
+        if (s.isEmpty()) {
+            return patternAllStars(pattern);
+        }
+
+        // Fallback to the original robust glob matcher for complex patterns.
+        return StringUtils.matchesGlob(str, pattern);
+    }
+
+    private static boolean patternAllStars(String pattern) {
+        for (int i = 0; i < pattern.length(); i++) {
+            if (pattern.charAt(i) != '*') {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
