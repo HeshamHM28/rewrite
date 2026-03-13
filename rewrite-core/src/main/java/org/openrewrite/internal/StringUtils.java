@@ -700,13 +700,14 @@ public class StringUtils {
         boolean inSingleLineComment = false;
 
         int length = source.length();
+        char[] chars = source.toCharArray();
         for (; cursor < length; cursor++) {
-            char current = source.charAt(cursor);
+            char current = chars[cursor];
             if (inSingleLineComment) {
                 inSingleLineComment = current != '\n';
                 continue;
-            } else if (length > cursor + 1) {
-                char next = source.charAt(cursor + 1);
+            } else if (cursor + 1 < length) {
+                char next = chars[cursor + 1];
                 if (inMultiLineComment) {
                     if (current == '*' && next == '/') {
                         inMultiLineComment = false;
