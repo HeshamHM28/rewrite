@@ -177,9 +177,19 @@ public class StringUtils {
         if (string == null || string.isEmpty()) {
             return true;
         }
-        for (int i = 0; i < string.length(); i++) {
-            if (!Character.isWhitespace(string.charAt(i))) {
+        int len = string.length();
+        for (int i = 0; i < len; i++) {
+            char c = string.charAt(i);
+            if (c <= 0x7F) {
+                // Fast-path for common ASCII whitespaces: space, tab, line feed, carriage return, form feed, vertical tab
+                if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\u000B') {
+                    continue;
+                }
                 return false;
+            } else {
+                if (!Character.isWhitespace(c)) {
+                    return false;
+                }
             }
         }
         return true;
