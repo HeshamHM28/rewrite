@@ -580,12 +580,27 @@ public class StringUtils {
             String s = s2.toString();
             return s.substring(s.lastIndexOf('\n') + 1);
         }
-        for (int i = 0; i < s1.length() && i < s2.length(); i++) {
-            if (s1.charAt(i) != s2.charAt(i) || !Character.isWhitespace(s1.charAt(i))) {
-                return s1.toString().substring(0, i);
+        int len1 = s1.length();
+        int len2 = s2.length();
+        int min = len1 < len2 ? len1 : len2;
+        int i = 0;
+        while (i < min) {
+            char c1 = s1.charAt(i);
+            char c2 = s2.charAt(i);
+            if (c1 != c2 || !Character.isWhitespace(c1)) {
+                if (s1 instanceof String) {
+                    return ((String) s1).substring(0, i);
+                } else {
+                    return s1.toString().substring(0, i);
+                }
             }
+            i++;
         }
-        return s2.length() < s1.length() ? s2.toString() : s1.toString();
+        if (len2 < len1) {
+            return s2 instanceof String ? (String) s2 : s2.toString();
+        } else {
+            return s1 instanceof String ? (String) s1 : s1.toString();
+        }
     }
 
     public static boolean isNumeric(@Nullable String str) {
