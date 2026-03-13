@@ -660,33 +660,31 @@ public class StringUtils {
 
         int m = s1.length();
         int n = s2.length();
-        int cost;
+        // Convert to char arrays once to avoid repeated bounds/charset checks in hot loops
+        char[] a = s1.toCharArray();
+        char[] b = s2.toCharArray();
+
         int maxLen = 0;
-        int[] p = new int[n];
-        int[] d = new int[n];
+        // Single buffer of length n+1 used for rolling DP; dp[j] corresponds to length for suffixes ending at b[j-1]
+        int[] dp = new int[n + 1];
 
-        for (int i = 0; i < m; ++i) {
-            for (int j = 0; j < n; ++j) {
-                // calculate cost/score
-                if (s1.charAt(i) != s2.charAt(j)) {
-                    cost = 0;
-                } else {
-                    if ((i == 0) || (j == 0)) {
-                        cost = 1;
-                    } else {
-                        cost = p[j - 1] + 1;
+        for (int i = 1; i <= m; i++) {
+            int prev = 0; // dp[j-1] from previous iteration of j (and previous row before overwrite)
+            char ai = a[i - 1];
+            // iterate j backwards so dp[j-1] (prev) is still the previous row's value
+            for (int j = n; j >= 1; j--) {
+                int temp = dp[j];
+                if (ai == b[j - 1]) {
+                    int val = prev + 1;
+                    dp[j] = val;
+                    if (val > maxLen) {
+                        maxLen = val;
                     }
+                } else {
+                    dp[j] = 0;
                 }
-                d[j] = cost;
-
-                if (cost > maxLen) {
-                    maxLen = cost;
-                }
-            } // for {}
-
-            int[] swap = p;
-            p = d;
-            d = swap;
+                prev = temp;
+            }
         }
 
         return maxLen;
