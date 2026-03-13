@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 public class StringUtils {
     private static final Pattern LINE_BREAK = Pattern.compile("\\R");
+    private static final Pattern URI_PROTOCOL_PATTERN = Pattern.compile("(?<!\\\\)://");
 
     private StringUtils() {
     }
@@ -731,7 +732,7 @@ public class StringUtils {
     }
 
     public static String formatUriForPropertiesFile(String uri) {
-        return uri.replaceAll("(?<!\\\\)://", "\\\\://");
+        return URI_PROTOCOL_PATTERN.matcher(uri).replaceAll("\\\\://");
     }
 
     public static boolean hasLineBreak(@Nullable String s) {
