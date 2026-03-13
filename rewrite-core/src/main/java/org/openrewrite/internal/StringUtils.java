@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 public class StringUtils {
     private static final Pattern LINE_BREAK = Pattern.compile("\\R");
+    private static final char TEMP_MARKER = '\u23ce';
 
     private StringUtils() {
     }
@@ -38,9 +39,32 @@ public class StringUtils {
         if (text == null) {
             return null;
         }
-        return trimIndent((text.endsWith("\r\n") ? text.substring(0, text.length() - 2) : text)
-                .replace('\r', '⏎'))
-                .replace('⏎', '\r');
+        
+        // Single-pass optimization: handle CRLF removal and character replacement in one go
+        int len = text.length();
+        boolean endsWithCRLF = len >= 2 && text.charAt(len - 2) == '\r' && text.charAt(len - 1) == '\n';
+        int effectiveLen = endsWithCRLF ? len - 2 : len;
+        
+        char[] chars = new char[effectiveLen];
+        for (int i = 0; i < effectiveLen; i++) {
+            char c = text.charAt(i);
+            chars[i] = (c == '\r') ? TEMP_MARKER : c;
+        }
+        
+        String processed = trimIndent(new String(chars));
+        
+        // Replace temp markers back to \r in a single pass
+        if (processed.indexOf(TEMP_MARKER) >= 0) {
+            char[] result = processed.toCharArray();
+            for (int i = 0; i < result.length; i++) {
+                if (result[i] == TEMP_MARKER) {
+                    result[i] = '\r';
+                }
+            }
+            return new String(result);
+        }
+        
+        return processed;
     }
 
     /**
