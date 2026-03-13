@@ -73,7 +73,23 @@ public class PathUtils {
     }
 
     public static boolean matchesGlob(@Nullable Path path, @Nullable String globPattern) {
-        return matchesGlob(path == null ? null : separatorsToUnix(path.toString()), globPattern);
+        // Fast-path for universal match or null pattern (keeps behavior identical to StringUtils.matchesGlob)
+        if ("*".equals(globPattern) || globPattern == null) {
+            return true;
+        }
+
+        // If there's no path, delegate to StringUtils with empty string (StringUtils treats null as empty)
+        if (path == null) {
+            return StringUtils.matchesGlob("", globPattern);
+        }
+
+        // Avoid creating a new String if there are no Windows separators
+        String pathStr = path.toString();
+        if (pathStr.indexOf(WINDOWS_SEPARATOR) >= 0) {
+            pathStr = separatorsToUnix(pathStr);
+        }
+
+        return StringUtils.matchesGlob(pathStr, globPattern);
     }
 
     public static boolean matchesGlob(@Nullable String path, @Nullable String globPattern) {
