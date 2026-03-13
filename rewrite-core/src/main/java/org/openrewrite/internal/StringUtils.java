@@ -214,16 +214,17 @@ public class StringUtils {
      * @return the full contents of the input stream interpreted as a string of the specified encoding
      */
     public static String readFully(InputStream inputStream, Charset charset) {
-        try (InputStream is = inputStream) {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            byte[] buffer = new byte[4096];
+        // Use a streaming decoder (InputStreamReader) into a StringBuilder to avoid
+        // allocating an intermediate byte[] copy (ByteArrayOutputStream.toByteArray())
+        // and to reduce temporary object churn.
+        try (java.io.Reader reader = new java.io.InputStreamReader(inputStream, charset)) {
+            StringBuilder sb = new StringBuilder(8192);
+            char[] cbuf = new char[8192];
             int n;
-            while ((n = is.read(buffer)) != -1) {
-                bos.write(buffer, 0, n);
+            while ((n = reader.read(cbuf)) != -1) {
+                sb.append(cbuf, 0, n);
             }
-
-            byte[] bytes = bos.toByteArray();
-            return new String(bytes, charset);
+            return sb.toString();
         } catch (IOException e) {
             throw new UnsupportedOperationException(e);
         }
