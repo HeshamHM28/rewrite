@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 public class StringUtils {
     private static final Pattern LINE_BREAK = Pattern.compile("\\R");
+    private static final boolean[] ASCII_WHITESPACE = new boolean[128];
 
     private StringUtils() {
     }
@@ -739,9 +740,17 @@ public class StringUtils {
     }
 
     public static boolean containsWhitespace(String s) {
-        for (int i = 0; i < s.length(); ++i) {
-            if (Character.isWhitespace(s.charAt(i))) {
-                return true;
+        int len = s.length();
+        for (int i = 0; i < len; ++i) {
+            char c = s.charAt(i);
+            if (c < 128) {
+                if (ASCII_WHITESPACE[c]) {
+                    return true;
+                }
+            } else {
+                if (Character.isWhitespace(c)) {
+                    return true;
+                }
             }
         }
 
