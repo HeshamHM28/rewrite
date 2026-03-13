@@ -238,11 +238,22 @@ public class PathUtils {
         Matcher matcher = NEGATION_PATTERN.matcher(globPattern);
 
         // Find all negation patterns and generate excluded patterns
+        // Cache replacements for identical negation literals to avoid repeated full-string replaces.
+        java.util.HashMap<String, String[]> cache = new java.util.HashMap<>();
         while (matcher.find()) {
-            String negationContent = matcher.group(1);
-            String[] options = negationContent.split("\\|");
-            for (String option : options) {
-                excludedPatterns.add(globPattern.replace(matcher.group(), option));
+            String wholeMatch = matcher.group(); // the literal matched, e.g. "!(a|b)"
+            String[] replacements = cache.get(wholeMatch);
+            if (replacements == null) {
+                String negationContent = matcher.group(1);
+                String[] options = negationContent.split("\\|");
+                replacements = new String[options.length];
+                for (int i = 0; i < options.length; i++) {
+                    replacements[i] = globPattern.replace(wholeMatch, options[i]);
+                }
+                cache.put(wholeMatch, replacements);
+            }
+            for (String replacement : replacements) {
+                excludedPatterns.add(replacement);
             }
         }
 
