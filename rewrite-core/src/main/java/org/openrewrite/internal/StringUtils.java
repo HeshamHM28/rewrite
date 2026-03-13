@@ -131,7 +131,59 @@ public class StringUtils {
      * @return The minimum count of white space characters preceding each line of content.
      */
     public static int minCommonIndentLevel(String text) {
-        return minCommonIndentLevel(text, 1);
+        // Fast single-pass scan that avoids regex/splitting and extra String allocations.
+        int len = text.length();
+        if (len == 0) {
+            return 0;
+        }
+
+        int minIndent = Integer.MAX_VALUE;
+        boolean sawContentLine = false;
+
+        int i = 0;
+        // Track whether we're still in leading whitespace of the current line and how many leading whitespace chars seen.
+        boolean inLeading = true;
+        int leadingCount = 0;
+
+        while (i < len) {
+            char c = text.charAt(i++);
+            if (c == '\r' || c == '\n') {
+                // End of line - if we were inLeading, the line was blank or only whitespace -> ignore.
+                // If we had seen content on the line, we've already accounted for its leadingCount when first content char arrived.
+                // Reset for next line.
+                inLeading = true;
+                leadingCount = 0;
+                // Handle CRLF as a single line break
+                if (c == '\r' && i < len && text.charAt(i) == '\n') {
+                    i++;
+                }
+                continue;
+            }
+
+            if (inLeading) {
+                // Treat typical indent characters as whitespace quickly (space and tab).
+                if (c == ' ' || c == '\t' || Character.isWhitespace(c)) {
+                    // Note: line break whitespace already handled above, so other whitespace (e.g. form feed) is counted here.
+                    leadingCount++;
+                    continue;
+                } else {
+                    // First non-whitespace character on this line -> this is a content line.
+                    sawContentLine = true;
+                    if (leadingCount < minIndent) {
+                        minIndent = leadingCount;
+                    }
+                    inLeading = false;
+                    // rest of line can be skipped until we hit a line break; continue loop to advance characters.
+                }
+            }
+            // If not inLeading, we are inside content; nothing to do until line break.
+        }
+
+        // If the text ended while we were still inLeading, the last line was blank -> nothing to do.
+        // Otherwise, if the last line had content and we haven't already recorded it (we record upon first content char),
+        // nothing extra is required.
+
+        return sawContentLine ? minIndent : 0;
     }
 
     public static int minCommonIndentLevel(String text, int tabSize) {
